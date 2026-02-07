@@ -4,7 +4,6 @@ numpy
 joblib
 gunicorn
 scikit-learn
-flask
 
 
 
