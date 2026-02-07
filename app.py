@@ -8,8 +8,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Load model
-model = joblib.load("cardiac_model.pkl")
-scaler = joblib.load("scaler.pkl")
+model = joblib.load("cardiac_model_real.pkl")
+scaler = joblib.load("scaler_real.pkl")
 
 @app.route("/", methods=["GET"])
 def home():
