@@ -7,13 +7,13 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Load model
-model = joblib.load("cardiac_model_real.pkl")
-scaler = joblib.load("scaler_real.pkl")
+# ---------------- LOAD MODEL ----------------
+model = joblib.load("cardiac_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"status": "CardioGuard Backend Running"})
+    return jsonify({"status": "CardioGuard Backend Running ✅"})
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -23,7 +23,7 @@ def predict():
         patient = data["patient"]
         medical = data["medical"]
 
-        # ✅ FORCE NUMERIC CONVERSION (CRITICAL)
+        # FORCE NUMERIC CONVERSION
         features = [
             float(patient["age"]),
             float(patient["gender"]),
@@ -38,10 +38,7 @@ def predict():
         X = np.array(features, dtype=float).reshape(1, -1)
         X_scaled = scaler.transform(X)
 
-        # ✅ CORRECT PREDICTION
         pred = int(model.predict(X_scaled)[0])
-
-        # ✅ ALWAYS TAKE PROBABILITY OF CLASS 1 (HIGH RISK)
         prob = float(model.predict_proba(X_scaled)[0][1])
 
         risk = "HIGH RISK" if pred == 1 else "LOW RISK"
@@ -55,7 +52,6 @@ def predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
