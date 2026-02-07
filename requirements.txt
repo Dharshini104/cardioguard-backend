@@ -2,7 +2,7 @@ flask
 flask-cors
 numpy
 joblib
-pymongo
+gunicorn
 scikit-learn
 
 
