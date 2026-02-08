@@ -2,9 +2,9 @@ flask
 flask-cors
 numpy
 joblib
-gunicorn
+pymongo
 scikit-learn
-psycopg2-binary
+
 
 
 
