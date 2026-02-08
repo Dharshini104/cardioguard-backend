@@ -4,6 +4,7 @@ numpy
 joblib
 gunicorn
 scikit-learn
+psycopg2-binary
 
 
 
