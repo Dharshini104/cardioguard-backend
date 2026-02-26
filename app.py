@@ -3,30 +3,37 @@ from flask_cors import CORS
 import numpy as np
 import joblib
 import os
-
-# ---------- MONGODB ----------
 from pymongo import MongoClient
+from urllib.parse import quote_plus
 
-# ---------- APP SETUP ----------
+# ---------------- APP SETUP ----------------
 app = Flask(__name__)
 CORS(app)
 
-# ---------- LOAD ML MODEL ----------
-model = joblib.load("cardiac_model.pkl")
-scaler = joblib.load("scaler.pkl")
+# ---------------- LOAD ML MODEL ----------------
+try:
+    model = joblib.load("cardiac_model.pkl")
+    scaler = joblib.load("scaler.pkl")
+except Exception as e:
+    raise RuntimeError(f"Model loading failed: {e}")
 
-# ---------- MONGODB ATLAS CONNECTION ----------
-# DO NOT hardcode the URI
+# ---------------- MONGODB CONNECTION ----------------
 MONGO_URI = os.environ.get("MONGO_URI")
 
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI environment variable not set")
 
-mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["cardioguard"]
-predictions_col = db["predictions"]
+try:
+    mongo_client = MongoClient(MONGO_URI)
+    # Test connection
+    mongo_client.admin.command("ping")
+    db = mongo_client["cardioguard"]
+    predictions_col = db["predictions"]
+    print("✅ MongoDB connected successfully")
+except Exception as e:
+    raise RuntimeError(f"MongoDB connection failed: {e}")
 
-# ---------- HEALTH CHECK ----------
+# ---------------- HEALTH CHECK ----------------
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -34,17 +41,22 @@ def home():
         "database": "MongoDB Atlas connected"
     })
 
-# ---------- PREDICTION ENDPOINT ----------
+# ---------------- PREDICTION ENDPOINT ----------------
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
 
-        # --------- INPUT DATA ---------
-        patient = data["patient"]
-        medical = data["medical"]
+        if not data:
+            return jsonify({"error": "No JSON data received"}), 400
 
-        # --------- FEATURE ORDER (VERY IMPORTANT) ---------
+        patient = data.get("patient")
+        medical = data.get("medical")
+
+        if not patient or not medical:
+            return jsonify({"error": "Missing patient or medical data"}), 400
+
+        # Feature order MUST match training order
         features = [
             float(patient["age"]),
             float(patient["gender"]),
@@ -59,14 +71,13 @@ def predict():
         X = np.array(features).reshape(1, -1)
         X_scaled = scaler.transform(X)
 
-        # --------- MODEL PREDICTION ---------
         prediction = int(model.predict(X_scaled)[0])
         probability = float(model.predict_proba(X_scaled)[0][1])
 
         risk = "HIGH RISK" if prediction == 1 else "LOW RISK"
         confidence = round(probability * 100, 2)
 
-        # --------- STORE IN MONGODB ATLAS ---------
+        # Store in MongoDB
         predictions_col.insert_one({
             "patient": patient,
             "medical": medical,
@@ -74,7 +85,6 @@ def predict():
             "confidence": confidence
         })
 
-        # --------- RESPONSE ---------
         return jsonify({
             "risk": risk,
             "confidence": confidence
@@ -85,7 +95,8 @@ def predict():
             "error": str(e)
         }), 400
 
-# ---------- RUN SERVER ----------
+
+# ---------------- RUN SERVER ----------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
