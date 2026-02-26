@@ -4,6 +4,6 @@ numpy
 joblib
 pymongo
 scikit-learn
-
+gunicorn
 
 
