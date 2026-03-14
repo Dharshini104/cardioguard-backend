@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Firebase keys
+*.json
+firebase-adminsdk*.json
+serviceAccountKey.json
