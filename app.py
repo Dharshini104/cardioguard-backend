@@ -3,6 +3,7 @@ from flask_cors import CORS
 import numpy as np
 import joblib
 import os
+import json
 from datetime import datetime
 from pymongo import MongoClient
 
@@ -17,6 +18,7 @@ CORS(app)
 try:
     model = joblib.load("cardiac_model.pkl")
     scaler = joblib.load("scaler.pkl")
+    print("✅ ML model loaded")
 except Exception as e:
     raise RuntimeError(f"Model loading failed: {e}")
 
@@ -24,7 +26,7 @@ except Exception as e:
 MONGO_URI = os.environ.get("MONGO_URI")
 
 if not MONGO_URI:
-    raise RuntimeError("MONGO_URI environment variable not set")
+    raise RuntimeError("❌ MONGO_URI environment variable not set")
 
 try:
     mongo_client = MongoClient(MONGO_URI)
@@ -41,9 +43,16 @@ except Exception as e:
 
 # ---------------- FIREBASE CONFIG ----------------
 try:
-    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_key = os.environ.get("FIREBASE_KEY")
+
+    if not firebase_key:
+        raise RuntimeError("❌ FIREBASE_KEY environment variable not set")
+
+    cred = credentials.Certificate(json.loads(firebase_key))
     firebase_admin.initialize_app(cred)
+
     print("✅ Firebase initialized")
+
 except Exception as e:
     raise RuntimeError(f"Firebase initialization failed: {e}")
 
