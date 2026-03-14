@@ -3,4 +3,7 @@ flask-cors
 numpy
 joblib
 pymongo
-firebase-admin
+dnspython
+scikit-learn
+gunicorn
+
