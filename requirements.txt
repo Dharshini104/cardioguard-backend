@@ -6,4 +6,4 @@ pymongo
 dnspython
 scikit-learn
 gunicorn
-
+firebase-admin
